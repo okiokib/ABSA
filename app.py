@@ -1,55 +1,70 @@
+import streamlit as st
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import SVC
-from sklearn.model_selection import train_test_split
 from nltk.tokenize import sent_tokenize
 import nltk
-import streamlit as st
-import pickle
 
 # Pastikan nltk sudah diunduh
 nltk.download('punkt')
 
+# Load data
+@st.cache(allow_output_mutation=True)
+def load_data(path):
+    data = pd.read_excel(path)
+    return data
+
 # Load models and vectorizer
 @st.cache(allow_output_mutation=True)
 def load_models():
-    with open('svm_sentiment.pkl', 'rb') as file:
-        svm_sentiment = pickle.load(file)
-    with open('svm_aspect.pkl', 'rb') as file:
-        svm_aspect = pickle.load(file)
-    with open('tfidf_vectorizer.pkl', 'rb') as file:
-        vectorizer = pickle.load(file)
+    svm_sentiment = SVC(kernel='linear')
+    svm_aspect = SVC(kernel='linear')
+    vectorizer = TfidfVectorizer()
     return svm_sentiment, svm_aspect, vectorizer
 
-svm_sentiment, svm_aspect, vectorizer = load_models()
+# Function to preprocess and analyze review
+def analyze_review(review, svm_sentiment, svm_aspect, vectorizer):
+    sentences = sent_tokenize(review)
+    results = []
+    aspect_labels = {0: 'fasilitas', 1: 'Staf/Layanan', 2: 'kebersihan', 3: 'lokasi', 4: 'Other'}
 
-# Title
-st.title("Ulasan Hotel Sentimen dan Aspek Analisis")
+    for sentence in sentences:
+        sentence_tfidf = vectorizer.transform([sentence])
+        predicted_sentiment = svm_sentiment.predict(sentence_tfidf)
+        predicted_aspect = svm_aspect.predict(sentence_tfidf)
+        aspect = aspect_labels.get(predicted_aspect[0], 'Other')
+        sentiment = 'positif' if predicted_sentiment[0] == 1 else 'negatif'
+        results.append(f"aspek:{aspect} sentimen:{sentiment} - {sentence}")
 
-# Input
-complex_review = st.text_area("Masukkan ulasan hotel:", "Kamar sangat nyaman dan fasilitasnya lengkap. Staff hotel sangat ramah dan membantu. Lokasinya strategis dekat dengan pusat perbelanjaan. Makanan di restoran enak dan bervariasi. Namun, kebersihan kamar mandi perlu ditingkatkan.")
+    return results
 
-if st.button("Analisis"):
-    if complex_review:
-        # Tokenize the complex review into sentences
-        sentences = sent_tokenize(complex_review)
+# Main function to run Streamlit app
+def main():
+    st.title("Analisis Sentimen dan Aspek Ulasan")
+    st.sidebar.title("Menu")
 
-        # Aspect labels
-        aspect_labels = {0: 'fasilitas', 1: 'Staf/Layanan', 2: 'kebersihan', 3: 'lokasi', 4: 'Makanan', 5: 'Other'}
+    menu = st.sidebar.radio("Pilih menu:", ["Ulasan Baru"])
 
-        # Analyze each sentence
-        results = []
-        for sentence in sentences:
-            sentence_tfidf = vectorizer.transform([sentence])
-            predicted_sentiment = svm_sentiment.predict(sentence_tfidf)
-            predicted_aspect = svm_aspect.predict(sentence_tfidf)
-            aspect = aspect_labels.get(predicted_aspect[0], 'Other')
-            sentiment = 'positif' if predicted_sentiment[0] == 1 else 'negatif'
-            results.append(f"aspek:{aspect} sentimen:{sentiment} - {sentence}")
+    if menu == "Ulasan Baru":
+        st.subheader("Analisis Ulasan Baru")
+        
+        # Load data and models
+        data = load_data('coba.xlsx')
+        svm_sentiment, svm_aspect, vectorizer = load_models()
 
-        # Display results
-        st.write("### Hasil Analisis")
-        for result in results:
-            st.write(result)
-    else:
-        st.write("Silakan masukkan ulasan untuk dianalisis.")
+        # Input review
+        review = st.text_area("Masukkan ulasan baru:")
+
+        if st.button("Analyze"):
+            if review:
+                # Analyze review
+                results = analyze_review(review, svm_sentiment, svm_aspect, vectorizer)
+
+                # Display results
+                for result in results:
+                    st.write(result)
+            else:
+                st.warning("Masukkan ulasan terlebih dahulu.")
+
+if __name__ == "__main__":
+    main()

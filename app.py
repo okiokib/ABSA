@@ -11,7 +11,7 @@ nltk.download('punkt')
 # Load data
 @st.cache(allow_output_mutation=True)
 def load_data(path):
-    data = pd.read_excel(path)
+    data = pd.read_excel(path, engine='openpyxl')  # Pastikan menggunakan engine openpyxl
     return data
 
 # Load models and vectorizer

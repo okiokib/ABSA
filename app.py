@@ -23,12 +23,6 @@ def load_models():
 
 svm_sentiment, svm_aspect, vectorizer = load_models()
 
-# Load data
-def load_data():
-    path_file_excel = 'coba.xlsx'
-    data = pd.read_excel(path_file_excel)
-    return data
-
 # Title
 st.title("Ulasan Hotel Sentimen dan Aspek Analisis")
 
@@ -40,15 +34,17 @@ if st.button("Analisis"):
         # Tokenize the complex review into sentences
         sentences = sent_tokenize(complex_review)
 
+        # Aspect labels
+        aspect_labels = {0: 'fasilitas', 1: 'Staf/Layanan', 2: 'kebersihan', 3: 'lokasi', 4: 'Makanan', 5: 'Other'}
+
         # Analyze each sentence
         results = []
         for sentence in sentences:
             sentence_tfidf = vectorizer.transform([sentence])
             predicted_sentiment = svm_sentiment.predict(sentence_tfidf)
             predicted_aspect = svm_aspect.predict(sentence_tfidf)
-            aspect_labels = {0: 'Fasilitas', 1: 'Staf/Layanan', 2: 'Kebersihan', 3: 'Lokasi', 4: 'Makanan'}
-            aspect = aspect_labels.get(predicted_aspect[0], 'Unknown Aspect')
-            sentiment = 'Positif' if predicted_sentiment[0] == 1 else 'Negatif'
+            aspect = aspect_labels.get(predicted_aspect[0], 'Other')
+            sentiment = 'positif' if predicted_sentiment[0] == 1 else 'negatif'
             results.append(f"aspek:{aspect} sentimen:{sentiment} - {sentence}")
 
         # Display results

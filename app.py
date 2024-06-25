@@ -11,7 +11,7 @@ nltk.download('punkt')
 # Load data
 @st.cache(allow_output_mutation=True)
 def load_data(path):
-    data = pd.read_excel(path, engine='openpyxl')  # Pastikan menggunakan engine openpyxl
+    data = pd.read_csv(path)  # Membaca file CSV
     return data
 
 # Load models and vectorizer
@@ -49,7 +49,7 @@ def main():
         st.subheader("Analisis Ulasan Baru")
         
         # Load data and models
-        data = load_data('coba.xlsx')
+        data = load_data('coba.csv')  # Ubah ke 'coba.csv'
         svm_sentiment, svm_aspect, vectorizer = load_models()
 
         # Input review

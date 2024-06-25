@@ -17,14 +17,18 @@ def load_data(path):
 # Fungsi untuk memuat dan melatih model serta vectorizer
 @st.cache(allow_output_mutation=True)
 def load_and_train_models(data):
+    if 'Ulasan' not in data.columns or 'sentimen' not in data.columns or 'Aspect' not in data.columns:
+        st.error("Kolom 'Ulasan', 'sentimen', atau 'Aspect' tidak ditemukan dalam file CSV.")
+        return None, None, None
+
     vectorizer = TfidfVectorizer()
-    X = vectorizer.fit_transform(data['review'])
+    X = vectorizer.fit_transform(data['Ulasan'])
 
     svm_sentiment = SVC(kernel='linear')
-    svm_sentiment.fit(X, data['sentiment'])
+    svm_sentiment.fit(X, data['sentimen'])
 
     svm_aspect = SVC(kernel='linear')
-    svm_aspect.fit(X, data['aspect'])
+    svm_aspect.fit(X, data['Aspect'])
 
     return svm_sentiment, svm_aspect, vectorizer
 
@@ -56,21 +60,26 @@ def main():
         
         # Muat data dan latih model
         data = load_data('coba.csv')  # Ubah ke path yang sesuai
-        svm_sentiment, svm_aspect, vectorizer = load_and_train_models(data)
+        if data is not None:
+            st.write("Kolom dalam dataset:", data.columns)
+            svm_sentiment, svm_aspect, vectorizer = load_and_train_models(data)
+        
+            if svm_sentiment and svm_aspect and vectorizer:
+                # Input ulasan
+                review = st.text_area("Masukkan ulasan baru:")
 
-        # Input ulasan
-        review = st.text_area("Masukkan ulasan baru:")
+                if st.button("Analyze"):
+                    if review:
+                        # Analisis ulasan
+                        results = analyze_review(review, svm_sentiment, svm_aspect, vectorizer)
 
-        if st.button("Analyze"):
-            if review:
-                # Analisis ulasan
-                results = analyze_review(review, svm_sentiment, svm_aspect, vectorizer)
-
-                # Tampilkan hasil
-                for result in results:
-                    st.write(result)
-            else:
-                st.warning("Masukkan ulasan terlebih dahulu.")
+                        # Tampilkan hasil
+                        for result in results:
+                            st.write(result)
+                    else:
+                        st.warning("Masukkan ulasan terlebih dahulu.")
+        else:
+            st.error("Gagal memuat data. Periksa file CSV Anda.")
 
 if __name__ == "__main__":
     main()

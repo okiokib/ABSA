@@ -39,7 +39,7 @@ def analyze_review(review, svm_sentiment, svm_aspect, vectorizer):
         predicted_sentiment = svm_sentiment.predict(sentence_tfidf)
         predicted_aspect = svm_aspect.predict(sentence_tfidf)
         aspect = aspect_labels.get(predicted_aspect[0], 'Other')
-        sentiment = 'positif' jika predicted_sentiment[0] == 1 else 'negatif'
+        sentiment = 'positif' if predicted_sentiment[0] == 1 else 'negatif'
         results.append(f"aspek: {aspect} sentimen: {sentiment} - {sentence}")
 
     return results

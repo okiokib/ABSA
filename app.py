@@ -8,21 +8,27 @@ import nltk
 # Pastikan nltk sudah diunduh
 nltk.download('punkt')
 
-# Load data
+# Fungsi untuk memuat data
 @st.cache(allow_output_mutation=True)
 def load_data(path):
     data = pd.read_csv(path)  # Membaca file CSV
     return data
 
-# Load models and vectorizer
+# Fungsi untuk memuat dan melatih model serta vectorizer
 @st.cache(allow_output_mutation=True)
-def load_models():
-    svm_sentiment = SVC(kernel='linear')
-    svm_aspect = SVC(kernel='linear')
+def load_and_train_models(data):
     vectorizer = TfidfVectorizer()
+    X = vectorizer.fit_transform(data['review'])
+
+    svm_sentiment = SVC(kernel='linear')
+    svm_sentiment.fit(X, data['sentiment'])
+
+    svm_aspect = SVC(kernel='linear')
+    svm_aspect.fit(X, data['aspect'])
+
     return svm_sentiment, svm_aspect, vectorizer
 
-# Function to preprocess and analyze review
+# Fungsi untuk memproses dan menganalisis ulasan
 def analyze_review(review, svm_sentiment, svm_aspect, vectorizer):
     sentences = sent_tokenize(review)
     results = []
@@ -33,12 +39,12 @@ def analyze_review(review, svm_sentiment, svm_aspect, vectorizer):
         predicted_sentiment = svm_sentiment.predict(sentence_tfidf)
         predicted_aspect = svm_aspect.predict(sentence_tfidf)
         aspect = aspect_labels.get(predicted_aspect[0], 'Other')
-        sentiment = 'positif' if predicted_sentiment[0] == 1 else 'negatif'
-        results.append(f"aspek:{aspect} sentimen:{sentiment} - {sentence}")
+        sentiment = 'positif' jika predicted_sentiment[0] == 1 else 'negatif'
+        results.append(f"aspek: {aspect} sentimen: {sentiment} - {sentence}")
 
     return results
 
-# Main function to run Streamlit app
+# Fungsi utama untuk menjalankan aplikasi Streamlit
 def main():
     st.title("Analisis Sentimen dan Aspek Ulasan")
     st.sidebar.title("Menu")
@@ -48,19 +54,19 @@ def main():
     if menu == "Ulasan Baru":
         st.subheader("Analisis Ulasan Baru")
         
-        # Load data and models
-        data = load_data('coba.csv')  # Ubah ke 'coba.csv'
-        svm_sentiment, svm_aspect, vectorizer = load_models()
+        # Muat data dan latih model
+        data = load_data('coba.csv')  # Ubah ke path yang sesuai
+        svm_sentiment, svm_aspect, vectorizer = load_and_train_models(data)
 
-        # Input review
+        # Input ulasan
         review = st.text_area("Masukkan ulasan baru:")
 
         if st.button("Analyze"):
             if review:
-                # Analyze review
+                # Analisis ulasan
                 results = analyze_review(review, svm_sentiment, svm_aspect, vectorizer)
 
-                # Display results
+                # Tampilkan hasil
                 for result in results:
                     st.write(result)
             else:
